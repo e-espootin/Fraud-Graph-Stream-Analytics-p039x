@@ -1,0 +1,5 @@
+_spark_metadata/
+commands_pyspark.sh
+commands_scylladb.sh
+spark_apps/.ipynb_checkpoints
+spark_apps/connection_test

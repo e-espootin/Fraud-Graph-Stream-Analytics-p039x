@@ -18,11 +18,19 @@ class ClickhouseSink(AbstractClickhouseSink):
             password=CLICKHOUSE_PASSWORD,
             database=database,
         )
+        self.database = database
         self.table = table
 
     def sink_data(self, data: Transaction):
         try:
             # TODO , looking for better and more dynamic way to sink data
+
+            # if exists return
+            query = f"SELECT * FROM {self.database}.{
+                self.table} WHERE transaction_id = {data.transaction_id}"
+            result = self.client.execute(query)
+            if len(result) > 0:
+                return True
 
             # Get all attributes of the Transaction object
             # columns = [attr for attr in dir(data) if not callable(
@@ -44,7 +52,7 @@ class ClickhouseSink(AbstractClickhouseSink):
             columns_str = ", ".join(columns)
             # placeholders = "%d, '%s', %.2f, '%s', %d, '%s', %d, %d, %d, %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'"
             placeholders = "%d, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
-            query = f"INSERT INTO {self.table} ({columns_str}) VALUES ({data.terminal_id}, \
+            query = f"INSERT INTO {self.table} ({columns_str}) VALUES ({data.transaction_id}, \
                 '{data.t_datetime}', \
                 {data.amount}, \
                 '{data.merchant_name}', \
@@ -75,7 +83,38 @@ class ClickhouseSink(AbstractClickhouseSink):
 
     # create table
     def create_table(self):
+        '''
+            commands:
+
+            # Materlized view
+                CREATE MATERIALIZED VIEW mv_fin_trans_table
+                ENGINE = SummingMergeTree()
+                PARTITION BY toYYYYMM(event_time)
+                ORDER BY (event_time, event_type)
+                AS
+                SELECT
+                    toStartOfMinute(now()) AS event_time,
+                    'stream' AS event_type,
+                    kafka_key,
+                    kafka_value
+                FROM testdb1.fin_trans_table;
+
+
+            # TTL
+                ALTER TABLE fin_trans_table MODIFY TTL event_time + INTERVAL 15 MINUTE;
+
+        '''
         query = f"CREATE TABLE IF NOT EXISTS {self.table} (transaction_id Int64, t_datetime String, amount Float64, merchant_name String, merchant_id Int64, customer_name String, customer_id Int64, location_id Int64, payment_method String, terminal_id Int64, card_type String, card_brand String, transaction_type String, transaction_status String, transaction_category String, transaction_channel String, merchant_bank String, customer_bank String) ENGINE = MergeTree() ORDER BY transaction_id"
+        self.client.execute(query)
+
+        print(f"Table {self.table} created successfully.")
+        return True
+
+    def create_table_streamSink(self):
+        '''
+            CREATE TABLE IF NOT EXISTS fin_trans_table (event_time DateTime DEFAULT now(), event_type String DEFAULT 'stream', kafka_key String, kafka_value String) ENGINE = MergeTree() ORDER BY kafka_key;
+        '''
+        query = f"CREATE TABLE IF NOT EXISTS fin_trans_table (kafka_key String, kafka_value String) ENGINE = MergeTree() ORDER BY kafka_key;"
         self.client.execute(query)
         print(f"Table {self.table} created successfully.")
         return True

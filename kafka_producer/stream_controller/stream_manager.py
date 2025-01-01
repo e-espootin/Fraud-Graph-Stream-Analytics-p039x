@@ -23,9 +23,20 @@ class StreamManager:
         print("Starting data streaming...")
         while True:
             for transaction in self.transactions:
-                # print(f"transaction id: {transaction}")
-                data = transaction.read_data()
-                # print(f"Collected data: {data}")
+                print(f"Transaction ID: {transaction.transaction_id}")
+
+                if transaction.transaction_id % 100 == 0:
+                    data = transaction.read_fraud_location()
+                elif transaction.transaction_id % 150 == 0:
+                    # small transaction amount
+                    data = transaction.read_fraud_small_amount()
+                    self.stream_handler.send(
+                        topic=transaction.topic, data=data)
+                    #
+                    data = transaction.read_fraud_large_amount()
+                else:
+                    data = transaction.read_data()
+
                 print(f"topic: {transaction.topic}")
                 self.stream_handler.send(
                     topic=transaction.topic, data=data)

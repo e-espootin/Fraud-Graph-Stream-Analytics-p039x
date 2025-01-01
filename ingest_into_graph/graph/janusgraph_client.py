@@ -43,7 +43,8 @@ class JanusGraphClient:
     def add_transaction(self, transaction):
         try:
             exists = self.g.V().has('Transaction', 'transaction_id',
-                                    transaction.transaction_id).toList()
+                                    int(transaction.transaction_id)).toList()
+            # exists = self.g.V().has('transaction_id', 100050).valueMap() # not worked
             if exists:
                 print(f"Transaction {
                       transaction.transaction_id} already exists. Skipping...")

@@ -1,5 +1,8 @@
 .venv_graph
 config/__pycache__
 data/__pycache__
+graph/__pycache__
+models/__pycache__
+utils/__pycache__
 main_copy.py
 

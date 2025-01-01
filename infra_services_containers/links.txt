@@ -1,0 +1,14 @@
+docker image from:
+/Users/ebrahimespootin/dev/devops/dockercompose/spark/dev5_customPySpark/docker-stacks/images/pyspark-notebook/Dockerfile
+
+spark-sql-kafka
+https://mvnrepository.com/artifact/org.apache.spark/spark-sql-kafka-0-10
+
+docker image
+https://github.com/jupyter/docker-stacks/blob/main/images/pyspark-notebook/Dockerfile
+
+spark
+https://dlcdn.apache.org/spark/
+
+listeners:
+https://www.confluent.io/blog/kafka-listeners-explained/

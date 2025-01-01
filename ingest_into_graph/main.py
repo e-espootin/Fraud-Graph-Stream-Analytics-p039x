@@ -3,7 +3,7 @@ import nest_asyncio
 import json
 from data.clickhouse_connector import ClickHouseConnector
 from data.clickhouse_sink import ClickhouseSink
-
+from config.clickhouse_config import STREAM_TABLE, TRANSACTION_TABLE, CLICKHOUSE_DB
 from graph.janusgraph_client import JanusGraphClient
 from models.transaction import Transaction
 from utils.logger import setup_logger
@@ -14,25 +14,31 @@ logger = setup_logger()
 async def main():
     logger.info("Starting the application")
 
-    # Fetch data from ClickHouse
-    clickhouse = ClickHouseConnector(database='testdb1')
-    query = "SELECT * FROM testdb1.fin_trans_table "  # Update with your query
+    # fetch last transaction id that processed
+    clickhouse = ClickHouseConnector(database=CLICKHOUSE_DB)
+    last_processed_transaction_datetime = clickhouse.get_last_transaction_datetime(
+        table=TRANSACTION_TABLE)
+
+    # Update with your query
+    query = f"SELECT * FROM {STREAM_TABLE} where event_time > '{
+        last_processed_transaction_datetime}';"
     raw_transactions = clickhouse.fetch_transactions(query)
     logger.info(f"Fetched {len(raw_transactions)
                            } transactions from ClickHouse.")
 
     # ClickhouseSink
-    sink = ClickhouseSink(database='testdb1', table='fin_transactions')
+    sink = ClickhouseSink(database=CLICKHOUSE_DB, table=TRANSACTION_TABLE)
 
     # Process transactions
     janus_client = JanusGraphClient()
     try:
         for raw in raw_transactions:
             # print(f" raw record is: >>> {raw}")
-            transaction_data = json.loads(raw[1])
-            print(f" raw record is: >>> {transaction_data}")
+            transaction_data = json.loads(raw[3])
+            # print(f" raw record is: >>> {transaction_data}")
             transaction = Transaction(**transaction_data)
-            logger.info(f"Processing transaction {transaction.transaction_id}")
+            logger.info(f"Processing transaction {
+                transaction.transaction_id}")
 
             try:
                 # write transaction into clickhouse or scylla

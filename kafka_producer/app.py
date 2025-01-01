@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
         # Start streaming data
         stream_manager.start_streaming(
-            interval=30.0)  # Stream every 10 seconds
+            interval=3.0)  # Stream every 10 seconds
 
     except KeyboardInterrupt as e:
         print("\n KeyboardInterrupt : Streaming stopped.")

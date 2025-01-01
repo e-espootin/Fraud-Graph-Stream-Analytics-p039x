@@ -1,0 +1,73 @@
+
+
+services:
+  pyspark-notebook:
+    container_name: pyspark-notebook
+    image: xpyspark-notebook:latest
+    volumes:
+      - ./book_data:/home/jovyan/work/book_data/
+      - ./spark_apps:/home/jovyan/work/spark_apps/
+      - ./_spark_metadata:/home/jovyan/work/_spark_metadata/
+    ports:
+      - '8888:8888'
+    command: start-notebook.sh --NotebookApp.default_url=/home/jovyan/work --packages org.apache.spark:spark-sql-kafka-0-10_2.12-3.5.4
+
+  kafka:
+    container_name: kafka
+    image: bitnami/kafka:latest
+    ports:
+      - '9092:9092'
+      - '19092:19092'
+      - '29092:29092'
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENERS=Docker://:9092,PLAINTEXT://:19092,CONTROLLER://:9093,LISTENER_EBI://:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=Docker://kafka:9092,PLAINTEXT://localhost:19092,LISTENER_EBI://192.168.0.24:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT,Docker:PLAINTEXT,LISTENER_EBI:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+  # postgres:
+  #   container_name: postgres
+  #   image: postgres:latest
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: mydatabase
+  #   ports:
+  #     - '5432:5432'
+  
+  clickhouse:
+    container_name: clickhouse
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    environment:
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_USER=click
+      - CLICKHOUSE_PASSWORD=click
+      
+  scylla:
+    container_name: scylla
+    image: scylladb/scylla:latest
+    ports:
+      - '9042:9042'
+      - '9160:9160'
+    command: --smp 1 --memory 750M --overprovisioned 1
+    environment:
+      - SCYLLA_SEEDS=scylla
+
+  
+
+  janusgraph:
+    container_name: janusgraph
+    image: janusgraph/janusgraph:latest
+    ports:
+      - '8182:8182'
+    environment:
+      - JANUSGRAPH_STORAGE_BACKEND=cql
+      - JANUSGRAPH_STORAGE_HOSTS=scylla

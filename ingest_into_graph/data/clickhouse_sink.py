@@ -16,7 +16,7 @@ class ClickhouseSink(AbstractClickhouseSink):
             host=CLICKHOUSE_HOST,
             user=CLICKHOUSE_USER,
             password=CLICKHOUSE_PASSWORD,
-            database=database,
+            database='default',
         )
         self.database = database
         self.table = table
@@ -81,40 +81,66 @@ class ClickhouseSink(AbstractClickhouseSink):
             print(f"Error sinking data in sink_data: {e}")
             return False
 
-    # create table
-    def create_table(self):
-        '''
-            commands:
+    def prepare_ddl(self) -> bool:
+        try:
+            query = f"select * from system.databases as d where d.name = '{
+                self.database}';"
+            print(f"Query is: {query}")
+            # res = self.client.execute(query)[0][0]
+            if not self.client.execute(query):
+                query = f"CREATE DATABASE IF NOT EXISTS {self.database};"
+                self.client.execute(query)
+                print(f"Database {self.database} created successfully.")
 
-            # Materlized view
-                CREATE MATERIALIZED VIEW mv_fin_trans_table
-                ENGINE = SummingMergeTree()
-                PARTITION BY toYYYYMM(event_time)
-                ORDER BY (event_time, event_type)
-                AS
-                SELECT
-                    toStartOfMinute(now()) AS event_time,
-                    'stream' AS event_type,
-                    kafka_key,
-                    kafka_value
-                FROM testdb1.fin_trans_table;
+            # update client driver
+            self.client = Client(
+                host=CLICKHOUSE_HOST,
+                user=CLICKHOUSE_USER,
+                password=CLICKHOUSE_PASSWORD,
+                database=self.database,
+            )
 
+            # create table > stream collector
+            query = """
+            CREATE TABLE IF NOT EXISTS testdb1.fin_trans_table (event_time DateTime DEFAULT now(), \
+                event_type String DEFAULT 'stream', kafka_key String, kafka_value String  \
+                    ) ENGINE = MergeTree() ORDER BY kafka_key; 
+            """
+            self.client.execute(query)
+            print("Table test created successfully.")
 
-            # TTL
-                ALTER TABLE fin_trans_table MODIFY TTL event_time + INTERVAL 15 MINUTE;
+            query = """CREATE TABLE IF NOT EXISTS testdb1.fin_transactions (transaction_id Int64, t_datetime String, \
+                    amount Float64, merchant_name String, merchant_id Int64, customer_name String, \
+                    customer_id Int64, location_id Int64, payment_method String, terminal_id Int64, \
+                        card_type String, card_brand String, transaction_type String, transaction_status String, \
+                            transaction_category String, transaction_channel String, merchant_bank String, \
+                            customer_bank String) ENGINE = MergeTree() ORDER BY transaction_id; 
+            """
+            self.client.execute(query)
+            print("Table fin_trans_table created successfully.")
 
-        '''
-        query = f"CREATE TABLE IF NOT EXISTS {self.table} (transaction_id Int64, t_datetime String, amount Float64, merchant_name String, merchant_id Int64, customer_name String, customer_id Int64, location_id Int64, payment_method String, terminal_id Int64, card_type String, card_brand String, transaction_type String, transaction_status String, transaction_category String, transaction_channel String, merchant_bank String, customer_bank String) ENGINE = MergeTree() ORDER BY transaction_id"
-        self.client.execute(query)
+            query = """
+            ALTER TABLE testdb1.fin_trans_table MODIFY TTL event_time + INTERVAL 15 MINUTE;                        
+            """
+            self.client.execute(query)
+            print("TTL set successfully.")
 
-        print(f"Table {self.table} created successfully.")
-        return True
+            query = """
+            CREATE MATERIALIZED VIEW IF NOT EXISTS mv_fin_trans_table \
+            ENGINE = SummingMergeTree() \
+            PARTITION BY toYYYYMM(event_time) \
+            ORDER BY (event_time, event_type) \
+            AS \
+            SELECT \
+                toStartOfMinute(now()) AS event_time, \
+                'stream' AS event_type, \
+                kafka_key, \
+                kafka_value \
+            FROM testdb1.fin_trans_table;                       
+            """
+            self.client.execute(query)
+            print("MATERIALIZED VIEW created successfully.")
 
-    def create_table_streamSink(self):
-        '''
-            CREATE TABLE IF NOT EXISTS fin_trans_table (event_time DateTime DEFAULT now(), event_type String DEFAULT 'stream', kafka_key String, kafka_value String) ENGINE = MergeTree() ORDER BY kafka_key;
-        '''
-        query = f"CREATE TABLE IF NOT EXISTS fin_trans_table (kafka_key String, kafka_value String) ENGINE = MergeTree() ORDER BY kafka_key;"
-        self.client.execute(query)
-        print(f"Table {self.table} created successfully.")
-        return True
+        except Exception as e:
+            print(f"Error preparing DDL in prepare_ddl: {e}")
+            return False

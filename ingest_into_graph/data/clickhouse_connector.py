@@ -1,3 +1,4 @@
+from datetime import datetime
 from clickhouse_driver import Client
 from config.clickhouse_config import CLICKHOUSE_HOST, CLICKHOUSE_USER, CLICKHOUSE_PASSWORD, CLICKHOUSE_DB
 
@@ -23,10 +24,10 @@ class ClickHouseConnector:
         print(f"Last transaction id is: {res}")
         return int(res)
 
-    def get_last_transaction_datetime(self, *, table: str):
-        query = f"SELECT max(t_datetime) as event_time FROM {
+    def get_last_transaction_datetime(self, *, table: str) -> datetime:
+        query = f"SELECT if(max(t_datetime) IS NOT NULL, max(t_datetime) , '2025-01-01 17:34:37') AS event_time  FROM {
             self.database}.{table};"
-        print(f"Query is: {query}")
+        # print(f"Query is: {query}")
         res = self.client.execute(query)[0][0]
-        print(f"Last transaction datetime is: {res}")
+        # print(f"Last transaction datetime is: {res}")
         return res

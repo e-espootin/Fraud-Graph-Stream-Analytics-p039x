@@ -1,0 +1,2 @@
+ingest:
+	python main.py

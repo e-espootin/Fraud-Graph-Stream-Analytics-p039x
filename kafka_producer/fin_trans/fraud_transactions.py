@@ -47,7 +47,7 @@ class Transaction_Fraud(BaseModel):
             transaction_type=fake.random_element(
                 elements=("Purchase", "Refund")),
             transaction_status=fake.random_element(
-                elements=("Success", "Failed", "Pending")),
+                elements=("Success", "Failed")),
             transaction_category=fake.random_element(
                 elements=("Retail", "Grocery", "Electronics")),
             transaction_channel=fake.random_element(

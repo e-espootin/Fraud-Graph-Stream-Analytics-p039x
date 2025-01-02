@@ -1,4 +1,5 @@
 .venv_ml
+.venv
 
 ml-package/src/_dev.ipynb
 ml-package/src/app.py

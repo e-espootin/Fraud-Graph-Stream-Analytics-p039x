@@ -5,6 +5,8 @@ from stream_controller.transactions import *
 from stream_controller.stream_manager import StreamManager
 from stream_controller.kafka_stream_handler import StreamHandler
 from stream_controller.transactions import Transactions
+from data.clickhouse_connector import ClickHouseConnector
+import argparse
 
 
 def main():
@@ -13,13 +15,24 @@ def main():
 
 if __name__ == "__main__":
     try:
-        # TODO , get counter from file or last item in db
-        trans_id_counter = os.getenv('counter', 100001)
+        # Parse the arguments
+        parser = argparse.ArgumentParser(
+            description="Kafka Producer for Financial Transactions")
+        parser.add_argument('--interval_sec', type=int, default=10,
+                            help='Interval in seconds between streaming data')
+        args = parser.parse_args()
+        interval_sec = args.interval_sec
+
+        # get counter from clickhouse
+        click = ClickHouseConnector(database='testdb1')
+        trans_id_counter = click.get_last_transaction_id(
+            table='fin_transactions')
+        if not trans_id_counter:
+            trans_id_counter = os.getenv('counter', 100001)
+
         # Initialize gen transaction data
         trans_reg = Transactions(
             transaction_id=trans_id_counter, topic_name='fin-trans')
-        # trans_reg = [Transactions(
-        #     transaction_id=trans_id_counter, topic_name='transaction').read_data() for _ in range(2)]
 
         # Create the stream manager
         stream_manager = StreamManager()
@@ -31,7 +44,7 @@ if __name__ == "__main__":
 
         # Start streaming data
         stream_manager.start_streaming(
-            interval=3.0)  # Stream every 10 seconds
+            interval=interval_sec)  # Stream every n seconds
 
     except KeyboardInterrupt as e:
         print("\n KeyboardInterrupt : Streaming stopped.")

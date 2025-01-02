@@ -17,31 +17,9 @@ class JanusGraphClient:
     def close_connection(self):
         self.connection.close()
 
-    # submit a script to gremlin server
-    def go(self):
-        with DriverRemoteConnection('ws://localhost:8182/gremlin', 'g') as remote_connection:
-            g = traversal().withRemote(remote_connection)
-            vertices = g.V().toList()
-            return vertices
-
-    def user_exists(self, user_id):
-        user = self.g.V().has('User', 'user_id', user_id).toList()
-        return len(user) > 0
-
-    def user_exists2(self, user_id):
-        hercules_age = self.g.V().has('id', '4216').values('label').iterate()
-        print(f'Hercules is {hercules_age} years old.')
-
-    def example1(self):
-        try:
-            self.g.addV('Transaction').property(
-                'transaction_id', '123').iterate()
-        finally:
-            # Close connection
-            self.connection.close()
-
     def add_transaction(self, transaction):
         try:
+            # TODO : Bug , need to fix >> ERROR    Error processing transaction: <DataType.custom: 0>
             exists = self.g.V().has('Transaction', 'transaction_id',
                                     int(transaction.transaction_id)).toList()
             # exists = self.g.V().has('transaction_id', 100050).valueMap() # not worked
@@ -172,4 +150,29 @@ class JanusGraphClient:
             'USES_BANKING_SERVICES').make()
 
         mgmt.commit()
+    '''
+
+    '''
+    # submit a script to gremlin server
+    def go(self):
+        with DriverRemoteConnection('ws://localhost:8182/gremlin', 'g') as remote_connection:
+            g = traversal().withRemote(remote_connection)
+            vertices = g.V().toList()
+            return vertices
+
+    def user_exists(self, user_id):
+        user = self.g.V().has('User', 'user_id', user_id).toList()
+        return len(user) > 0
+
+    def user_exists2(self, user_id):
+        hercules_age = self.g.V().has('id', '4216').values('label').iterate()
+        print(f'Hercules is {hercules_age} years old.')
+
+    def example1(self):
+        try:
+            self.g.addV('Transaction').property(
+                'transaction_id', '123').iterate()
+        finally:
+            # Close connection
+            self.connection.close()
     '''

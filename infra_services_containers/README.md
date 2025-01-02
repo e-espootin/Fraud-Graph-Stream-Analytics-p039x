@@ -9,3 +9,7 @@
 ## how connect to scylla
 - https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.3.0
 - required > scalaVersion 2.12
+
+
+# docker down with remove volumes and containers
+docker-compose down -v --remove-orphans

@@ -1,1 +1,9 @@
-.venv
+.venv_ml
+
+ml-package/src/_dev.ipynb
+ml-package/src/app.py
+ml-package/src/_*
+
+__pycache__/
+*.pyc
+*.pyo

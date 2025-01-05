@@ -30,6 +30,15 @@ services:
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - ALLOW_PLAINTEXT_LISTENER=yes
 
+  runner:
+    image: kafka-runner:latest
+    container_name: kafka-runner
+    depends_on:
+      - kafka
+    volumes:
+      - ./kafka_scripts/add_topic.sh:/add_topic.sh
+    entrypoint: ["bash", "/add_topic.sh"]
+
   # postgres:
   #   container_name: postgres
   #   image: postgres:latest
@@ -50,7 +59,16 @@ services:
       - CLICKHOUSE_DB=default
       - CLICKHOUSE_USER=click
       - CLICKHOUSE_PASSWORD=click
-      
+  
+  clickhouse_runner:
+    image: appropriate/curl
+    container_name: clickhouse_runner
+    depends_on:
+      - clickhouse
+    volumes:
+      - ./clickhouse_scripts/ddl-clickhouse.sh:/ddl-clickhouse.sh
+    entrypoint: ["sh", "/ddl-clickhouse.sh"]
+
   scylla:
     container_name: scylla
     image: scylladb/scylla:latest
@@ -60,8 +78,6 @@ services:
     command: --smp 1 --memory 750M --overprovisioned 1
     environment:
       - SCYLLA_SEEDS=scylla
-
-  
 
   janusgraph:
     container_name: janusgraph

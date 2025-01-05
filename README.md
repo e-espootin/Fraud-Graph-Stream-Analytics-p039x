@@ -9,3 +9,11 @@ generating financial transaction streams with an emphasis on identifying and han
 ![Data graph](images/data-diagram.png)
 
 
+### dependencies
+- ddl prepare clickhouse
+- let stream producer run > topic will be created
+- submit spark job
+    -- INFO SharedState:: Warehouse path is 'file:/home/jovyan/spark-warehouse'.
+    -- create manually
+
+

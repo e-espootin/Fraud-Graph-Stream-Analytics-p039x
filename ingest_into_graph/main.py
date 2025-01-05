@@ -18,12 +18,15 @@ def main():
     # clickhouse client
     clickhouse = ClickHouseConnector(database=CLICKHOUSE_DB)
     sink = ClickhouseSink(database=CLICKHOUSE_DB, table=TRANSACTION_TABLE)
-    sink.prepare_ddl()
+    # sink.prepare_ddl()
 
     while True:
         # get last processed transaction datetime
         last_processed_transaction_datetime = clickhouse.get_last_transaction_datetime(
             table=TRANSACTION_TABLE)
+
+        if not last_processed_transaction_datetime:
+            last_processed_transaction_datetime = "2021-01-01 00:00:00"
 
         # Update with your query
         query = f"SELECT * FROM {STREAM_TABLE} where event_time > '{

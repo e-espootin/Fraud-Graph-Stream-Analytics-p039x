@@ -16,7 +16,7 @@ class ClickhouseSink(AbstractClickhouseSink):
             host=CLICKHOUSE_HOST,
             user=CLICKHOUSE_USER,
             password=CLICKHOUSE_PASSWORD,
-            database='default',
+            database='testdb1',
         )
         self.database = database
         self.table = table

@@ -1,3 +1,4 @@
 fin_trans/__pycache__/
 kafka_src/__pycache__/
 stream_controller/__pycache__/
+.venv_producer/
